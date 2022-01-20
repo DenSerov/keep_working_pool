@@ -1,0 +1,43 @@
+#!/bin/bash
+
+maxpool=4
+maxruns=10
+parray=();
+pnum=${#parray[@]};
+
+
+getPnum() {
+    jobs -lpr | cut -d " " -f 2 |
+    {
+      while IFS= read -r pid; do parray+=($pid); done;
+      pnum=${#parray[@]};
+      echo $pnum
+    }
+}
+
+myJob() {
+  rtime=$(($RANDOM%50+10))
+  sleep $rtime
+}
+
+for (( i=0; i<$maxpool; i++ ))
+do
+  let launched+=1
+  echo Creating a pool. Launch $pnum RunTime $rtime Launched $launched jobs in total.
+  myJob &
+  pnum=$(getPnum)
+done
+
+for (( i=0; i<$(( $maxruns-$maxpool )); i++ ))
+do
+    while [[ $pnum -ge $maxpool ]]
+    do
+      sleep 2;
+      pnum=$(getPnum)
+      echo Current number of jobs: $pnum 
+    done
+    let launched+=1
+    myJob &
+    echo Keeping it busy. Launch $pnum RunTime $rtime  Launched $launched jobs in total.
+    pnum=$(getPnum)
+done
